@@ -3,12 +3,45 @@ set -e
 
 # ==============================================================================
 # Script de Destruição Completa da Infraestrutura AWS (Teardown)
-# Tech Challenge Fase 3 - ToggleMaster
+# Permite ao usuário escolher interativamente qual perfil AWS utilizar
 # ==============================================================================
 
+select_aws_profile() {
+    AVAILABLE_PROFILES=($(aws configure list-profiles 2>/dev/null || true))
+    
+    if [ ${#AVAILABLE_PROFILES[@]} -eq 0 ]; then
+        echo "Nenhum perfil AWS encontrado na máquina."
+        exit 1
+    elif [ ${#AVAILABLE_PROFILES[@]} -eq 1 ]; then
+        export AWS_PROFILE="${AVAILABLE_PROFILES[0]}"
+        echo ">> Usando perfil AWS: $AWS_PROFILE"
+    else
+        echo "=============================================================================="
+        echo "Perfis AWS configurados nesta máquina:"
+        for i in "${!AVAILABLE_PROFILES[@]}"; do
+            echo "  [$((i+1))] ${AVAILABLE_PROFILES[$i]}"
+        done
+        echo "=============================================================================="
+        
+        while true; do
+            read -p "Escolha o número do perfil para o Teardown [1-${#AVAILABLE_PROFILES[@]}]: " CHOICE
+            if [[ "$CHOICE" =~ ^[0-9]+$ ]] && [ "$CHOICE" -ge 1 ] && [ "$CHOICE" -le "${#AVAILABLE_PROFILES[@]}" ]; then
+                export AWS_PROFILE="${AVAILABLE_PROFILES[$((CHOICE-1))]}"
+                echo ">> Perfil selecionado: $AWS_PROFILE"
+                break
+            else
+                echo "Opção inválida. Digite um número entre 1 e ${#AVAILABLE_PROFILES[@]}."
+            fi
+        done
+    fi
+}
+
+select_aws_profile
+
+ACCOUNT=$(aws sts get-caller-identity --query Account --output text 2>/dev/null || echo "default")
 REGION=${AWS_REGION:-"us-east-1"}
 CLUSTER_NAME="togglemaster-cluster"
-STATE_BUCKET="togglemaster-terraform-state-fiap"
+STATE_BUCKET="togglemaster-state-${ACCOUNT}"
 ECR_REPOS=(
   "togglemaster/auth-service"
   "togglemaster/flag-service"
@@ -71,13 +104,14 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TERRAFORM_DIR="$SCRIPT_DIR/../terraform"
 
 cd "$TERRAFORM_DIR"
-if [ -d ".terraform" ]; then
-    terraform destroy -auto-approve
-else
-    echo "Inicializando terraform antes da destruição..."
-    terraform init -backend=false || true
-    terraform destroy -auto-approve
+echo "Inicializando Terraform com o perfil '$AWS_PROFILE'..."
+if ! terraform init -input=false -reconfigure 2>/dev/null; then
+    echo "Aviso: Não foi possível conectar ao backend S3 remoto (pode ser que o bucket ainda não tenha sido criado ou a infraestrutura nunca tenha sido aplicada)."
+    echo "Inicializando localmente para verificar recursos pendentes..."
+    terraform init -input=false -backend=false >/dev/null 2>&1 || true
 fi
+
+terraform destroy -auto-approve || echo "Nota: Nenhum recurso gerenciado pelo Terraform precisava ser destruído."
 
 echo ""
 echo ">> 4. Destruição do Bucket S3 de Remote State (Opcional)..."
