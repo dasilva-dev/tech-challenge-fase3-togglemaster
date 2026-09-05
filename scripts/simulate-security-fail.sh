@@ -5,8 +5,11 @@
 # Permite simular a falha do pipeline no passo de segurança e depois corrigir!
 # ==============================================================================
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
 ACTION=${1:-"help"}
-TARGET_FILE="services/flag-service/requirements.txt"
+TARGET_FILE="$PROJECT_ROOT/services/flag-service/requirements.txt"
 VULN_DEP="urllib3==1.24.1" # Dependência antiga com CVE crítica conhecida (CVE-2019-11324)
 
 case "$ACTION" in
