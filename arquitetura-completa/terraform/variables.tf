@@ -16,12 +16,6 @@ variable "cluster_name" {
   default     = "togglemaster-cluster"
 }
 
-variable "enable_free_tier" {
-  type        = bool
-  description = "Quando true, opera em modo 100% Free Tier (EC2 t3.micro + 1x RDS db.t3.micro + DynamoDB + SQS, sem NAT Gateway e sem custos fixos de EKS)"
-  default     = true
-}
-
 variable "use_aws_academy" {
   type        = bool
   description = "Defina como true se estiver usando AWS Academy (utiliza LabRole). Defina como false para Conta Pessoal (cria IAM Roles completas)"

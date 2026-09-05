@@ -113,7 +113,6 @@ flowchart TD
 │   ├── arquitetura.md                   # Documentação completa de rede e infra AWS
 │   ├── devsecops.md                     # Guia de segurança, SAST, SCA e Container Scan
 │   ├── gitops.md                        # Guia de operação do ArgoCD e GitOps
-│   ├── roteiro_gravacao.md              # Roteiro passo a passo para o vídeo (Nota Máxima)
 │   └── relatorio_entrega.md             # Modelo oficial de entrega e estimativa de custos
 └── README.md
 ```
@@ -184,13 +183,10 @@ Conforme o requisito do desafio, para demonstrar o pipeline de segurança bloque
    ```
    > ✅ O pipeline passará por todos os 5 estágios e atualizará a tag no GitOps automaticamente.
 
-Consulte o [Roteiro de Gravação](docs/roteiro_gravacao.md) para instruções detalhadas de apresentação.
-
 ---
 
 ## 📚 5. Documentações Adicionais
 - 📘 [Arquitetura de Nuvem e Rede AWS](docs/arquitetura.md)
 - 🛡️ [Guia de DevSecOps e Segurança Shift-Left](docs/devsecops.md)
 - 🔄 [Guia de GitOps e ArgoCD](docs/gitops.md)
-- 🎬 [Roteiro Completo de Gravação de Vídeo](docs/roteiro_gravacao.md)
 - 📋 [Relatório de Entrega & Estimativa de Custos](docs/relatorio_entrega.md)

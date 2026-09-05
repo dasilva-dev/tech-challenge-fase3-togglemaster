@@ -61,3 +61,10 @@ services/evaluation-service/evaluation-service
 *~
 .DS_Store
 Thumbs.db
+
+# Roteiros locais (fora do controle de versão)
+*roteiro*
+*roteiro_gravacao*
+docs/roteiro_gravacao.md
+exemplo de roteiro de video.txt
+

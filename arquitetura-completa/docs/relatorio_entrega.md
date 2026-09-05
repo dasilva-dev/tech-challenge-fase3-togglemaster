@@ -46,28 +46,7 @@
 
 ## 4. Estimativa Detalhada de Custos na AWS (AWS Pricing Calculator)
 
-### 4.1 Ambiente Principal (100% AWS Free Tier - Custo Zero)
-
-O ambiente principal foi desenhado para operar com **custo zero** em contas da AWS, aproveitando os benefícios do Free Tier:
-
-| Serviço AWS | Configuração Free Tier | Custo Mensal Estimado (USD) |
-| :--- | :--- | :--- |
-| **Amazon EC2** | 1 instância `t3.micro` (750 horas/mês gratuitas) | **$0.00** (Free Tier) |
-| **Amazon EBS Storage** | 20 GB gp3 (até 30 GB gratuitos no Free Tier) | **$0.00** (Free Tier) |
-| **Amazon RDS (PostgreSQL)** | 1 instância `db.t3.micro` Single-AZ + 20 GB gp3 | **$0.00** (Free Tier - 750h) |
-| **Cache Redis** | Executado localmente em contêiner na EC2 | **$0.00** |
-| **Amazon VPC / Rede** | Subnets públicas com Internet Gateway (Sem NAT GW) | **$0.00** |
-| **Amazon DynamoDB** | On-Demand (PAY_PER_REQUEST) - até 25 GB gratuitos | **$0.00** (Free Tier) |
-| **Amazon SQS** | Fila padrão - até 1.000.000 requisições/mês | **$0.00** (Free Tier) |
-| **Amazon ECR** | 5 repositórios - até 500 MB/mês | **$0.00** (Free Tier) |
-| **Amazon S3 (State)** | Bucket remoto com versionamento (< 1 GB) | **$0.00** (Free Tier) |
-| **Total Mensal (Ambiente Principal)** | **Modo Free Tier Ativo** | **$0.00 USD / mês** |
-
----
-
-### 4.2 Arquitetura Completa Enterprise (Preservada em `arquitetura-completa/`)
-
-Para fins de dimensionamento corporativo em larga escala, a arquitetura multi-recurso com EKS e bancos dedicados possui a seguinte estimativa:
+A estimativa a seguir foi calculada com base na região `us-east-1` (N. Virginia), considerando uma arquitetura otimizada para ambiente de desenvolvimento/homologação de microsserviços.
 
 | Serviço AWS | Configuração / Dimensionamento | Custo Mensal Estimado (USD) |
 | :--- | :--- | :--- |
@@ -77,11 +56,11 @@ Para fins de dimensionamento corporativo em larga escala, a arquitetura multi-re
 | **Amazon RDS (PostgreSQL)** | 3 instâncias `db.t3.micro` Single-AZ + 20 GB gp3 cada | ~$54.00 (~$18.00/cada) |
 | **Amazon ElastiCache (Redis)** | 1 nó `cache.t4g.micro` (0.5 GiB RAM) | ~$11.68 |
 | **Amazon VPC (NAT Gateway)** | 1 NAT Gateway (~$0.045/hora) + tráfego | ~$34.50 |
-| **Amazon DynamoDB** | On-Demand (PAY_PER_REQUEST) | ~$0.00 (Free Tier) |
-| **Amazon SQS** | Fila padrão | ~$0.00 (Free Tier) |
-| **Amazon ECR** | 5 repositórios com lifecycle policy | ~$0.50 |
-| **Amazon S3 (Terraform State)** | Bucket com versionamento | ~$0.05 |
-| **Total Mensal Estimado** | **Arquitetura Multi-Recurso Completa** | **~$206.73 / mês** |
+| **Amazon DynamoDB** | On-Demand (PAY_PER_REQUEST) - Nível gratuito cobre até 25 GB | ~$0.00 (Free Tier) |
+| **Amazon SQS** | Fila padrão - Primeiras 1 milhão de requisições gratuitas | ~$0.00 (Free Tier) |
+| **Amazon ECR** | 5 repositórios (~5 GB de imagens com lifecycle policy) | ~$0.50 |
+| **Amazon S3 (Terraform State)** | Bucket com versionamento (< 1 GB) | ~$0.05 |
+| **Total Estimado Mensal** | **Ambiente Completo Ativo** | **~$206.73 / mês** |
 
-> 💡 **Nota de Otimização para Gravação e Demonstração**:  
-> Caso a arquitetura completa seja ligada para testes ou gravação e destruída logo em seguida através dos scripts de teardown (`scripts/teardown-aws.sh`), o custo real por 4 horas de execução é de apenas **~$1.15 USD** (menos de R$ 7,00).
+> 💡 **Nota de Otimização para Laboratório / Gravação**:  
+> Como o ambiente de teste pode ser ligado para os testes/gravação e destruído em seguida via `terraform destroy`, o custo real por 4 horas de execução de validação é de aproximadamente **$1.15 USD** (menos de R$ 7,00).
