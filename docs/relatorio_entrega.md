@@ -17,7 +17,7 @@
 
 ## 2. Links de Entrega
 
-- **Repositório GitHub (Código, IaC e GitOps)**: `https://github.com/[SEU_USUARIO]/[SEU_REPOSITORIO]`
+- **Repositório GitHub (Código, IaC e GitOps)**: [github.com/dasilva-dev/tech-challenge-fase3-togglemaster](https://github.com/dasilva-dev/tech-challenge-fase3-togglemaster)
 - **Vídeo de Demonstração (YouTube / Google Drive)**: `https://youtu.be/[SEU_LINK_DO_VIDEO]`
 - **Documentação de Arquitetura**: [docs/arquitetura.md](docs/arquitetura.md)
 - **Documentação de DevSecOps**: [docs/devsecops.md](docs/devsecops.md)

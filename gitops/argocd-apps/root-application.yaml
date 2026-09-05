@@ -13,7 +13,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/FIAP-TCs/togglemaster.git
+    repoURL: https://github.com/dasilva-dev/tech-challenge-fase3-togglemaster.git
     targetRevision: HEAD
     path: gitops/apps/base
   destination:
@@ -37,7 +37,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/FIAP-TCs/togglemaster.git
+    repoURL: https://github.com/dasilva-dev/tech-challenge-fase3-togglemaster.git
     targetRevision: HEAD
     path: gitops/apps/auth-service
   destination:
@@ -59,7 +59,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/FIAP-TCs/togglemaster.git
+    repoURL: https://github.com/dasilva-dev/tech-challenge-fase3-togglemaster.git
     targetRevision: HEAD
     path: gitops/apps/flag-service
   destination:
@@ -81,7 +81,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/FIAP-TCs/togglemaster.git
+    repoURL: https://github.com/dasilva-dev/tech-challenge-fase3-togglemaster.git
     targetRevision: HEAD
     path: gitops/apps/targeting-service
   destination:
@@ -103,7 +103,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/FIAP-TCs/togglemaster.git
+    repoURL: https://github.com/dasilva-dev/tech-challenge-fase3-togglemaster.git
     targetRevision: HEAD
     path: gitops/apps/evaluation-service
   destination:
@@ -125,7 +125,7 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://github.com/FIAP-TCs/togglemaster.git
+    repoURL: https://github.com/dasilva-dev/tech-challenge-fase3-togglemaster.git
     targetRevision: HEAD
     path: gitops/apps/analytics-service
   destination:
