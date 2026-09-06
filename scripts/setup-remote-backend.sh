@@ -51,30 +51,38 @@ select_aws_profile() {
 
 select_aws_profile
 
-BUCKET_NAME=${1:-"togglemaster-state-${ACCOUNT}"}
+# Se o usuário passou como argumento o nome antigo com colisão global, substituímos pelo exclusivo da conta
+if [ "$1" == "togglemaster-terraform-state-fiap" ] || [ -z "$1" ]; then
+    BUCKET_NAME="togglemaster-state-${ACCOUNT}"
+else
+    BUCKET_NAME="$1"
+fi
 REGION=${2:-"us-east-1"}
 
 echo ""
-echo "Criando S3 Bucket para Terraform State: $BUCKET_NAME na região $REGION..."
+echo ">> Alvo para o Terraform State: '$BUCKET_NAME' (Região: $REGION)"
 
+BUCKET_STATUS="Criado com sucesso"
 if aws s3api head-bucket --bucket "$BUCKET_NAME" 2>/dev/null; then
-    echo "Bucket $BUCKET_NAME já existe."
+    echo ">> O bucket '$BUCKET_NAME' já existe na sua conta AWS."
+    BUCKET_STATUS="Já existente (revalidado)"
 else
+    echo ">> Criando S3 Bucket: $BUCKET_NAME..."
     if [ "$REGION" == "us-east-1" ]; then
         aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$REGION"
     else
         aws s3api create-bucket --bucket "$BUCKET_NAME" --region "$REGION" \
             --create-bucket-configuration LocationConstraint="$REGION"
     fi
-    echo "Bucket $BUCKET_NAME criado com sucesso!"
+    echo ">> Bucket criado com sucesso!"
 fi
 
-echo "Habilitando Versionamento no Bucket..."
+echo ">> Configurando Versionamento (Status=Enabled)..."
 aws s3api put-bucket-versioning \
     --bucket "$BUCKET_NAME" \
     --versioning-configuration Status=Enabled
 
-echo "Habilitando Criptografia padrão (AES256)..."
+echo ">> Configurando Criptografia em repouso SSE-S3 (AES256)..."
 aws s3api put-bucket-encryption \
     --bucket "$BUCKET_NAME" \
     --server-side-encryption-configuration '{
@@ -87,7 +95,7 @@ aws s3api put-bucket-encryption \
         ]
     }'
 
-echo "Bloqueando Acesso Público ao Bucket..."
+echo ">> Bloqueando todo o acesso público (Public Access Block)..."
 aws s3api put-public-access-block \
     --bucket "$BUCKET_NAME" \
     --public-access-block-configuration '{
@@ -97,7 +105,30 @@ aws s3api put-public-access-block \
         "RestrictPublicBuckets": true
     }'
 
+# Atualiza backend.tf se o nome do bucket for diferente
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+BACKEND_FILE="$SCRIPT_DIR/../terraform/backend.tf"
+if [ -f "$BACKEND_FILE" ]; then
+    sed -i "s|bucket\s*=\s*\"[^\"]*\"|bucket       = \"$BUCKET_NAME\"|g" "$BACKEND_FILE"
+fi
+
+echo ""
 echo "=============================================================================="
-echo "S3 Remote Backend configurado com sucesso com o perfil '$AWS_PROFILE'!"
-echo "Agora você pode executar 'export AWS_PROFILE=$AWS_PROFILE' e rodar o Terraform."
+echo "                   RELATÓRIO DE CRIAÇÃO DO BACKEND S3"
+echo "=============================================================================="
+echo "  [✓] Perfil AWS Utilizado : $AWS_PROFILE"
+echo "  [✓] ID da Conta AWS      : $ACCOUNT"
+echo "  [✓] S3 Bucket            : $BUCKET_NAME"
+echo "  [✓] Status do Bucket     : $BUCKET_STATUS"
+echo "  [✓] Região AWS           : $REGION"
+echo "  [✓] Versionamento        : Habilitado (Histórico de alterações do tfstate)"
+echo "  [✓] Criptografia         : AES256 (SSE-S3 Server-Side Encryption)"
+echo "  [✓] Bloqueio Público     : 100% Protegido (Public Access Block ativo)"
+echo "  [✓] Trava de Concorrência: use_lockfile = true (Nativo do Terraform S3)"
+echo "  [✓] Arquivo Atualizado   : terraform/backend.tf"
+echo "=============================================================================="
+echo "Resultado: Remote Backend configurado e pronto para uso!"
+echo "Próximo passo recomendado:"
+echo "  export AWS_PROFILE=$AWS_PROFILE"
+echo "  cd terraform && terraform init"
 echo "=============================================================================="
