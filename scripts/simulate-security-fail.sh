@@ -10,7 +10,7 @@ PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 ACTION=${1:-"help"}
 TARGET_FILE="$PROJECT_ROOT/services/flag-service/requirements.txt"
-VULN_DEP="urllib3==1.24.1" # Dependência antiga com CVE crítica conhecida (CVE-2019-11324)
+VULN_DEP="django==2.0" # Dependência antiga com múltiplas CVEs CRÍTICAS conhecidas (CVE-2019-19844, CVE-2020-7471)
 
 case "$ACTION" in
     fail)
@@ -26,7 +26,7 @@ case "$ACTION" in
         if [ -f "${TARGET_FILE}.bak" ]; then
             mv "${TARGET_FILE}.bak" "$TARGET_FILE"
         else
-            sed -i "/urllib3==1.24.1/d" "$TARGET_FILE"
+            sed -i "/django==2.0/d" "$TARGET_FILE"
         fi
         echo "Dependência vulnerável removida!"
         echo "Agora faça o commit e push para ver o pipeline PASSAR com sucesso:"
