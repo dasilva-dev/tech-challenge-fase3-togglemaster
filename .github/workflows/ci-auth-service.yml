@@ -156,6 +156,10 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL'
 
+      - name: Ensure ECR Repository Exists
+        run: |
+          aws ecr describe-repositories --repository-names ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} || aws ecr create-repository --repository-name ${{ env.ECR_REPOSITORY }} --region ${{ env.AWS_REGION }} --image-tag-mutability MUTABLE
+
       - name: Push Image to Amazon ECR
         run: |
           docker push "${{ steps.login-ecr.outputs.registry }}/${{ env.ECR_REPOSITORY }}:${{ steps.vars.outputs.image_tag }}"
