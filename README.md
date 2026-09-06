@@ -1,16 +1,27 @@
-# ToggleMaster - Fase 3: Automação e Segurança na Nuvem
+﻿# ToggleMaster - Fase 3: Automação e Segurança na Nuvem
 
 ![Terraform](https://img.shields.io/badge/IaC-Terraform_Modular-623CE4?logo=terraform&logoColor=white)
-![AWS](https://img.shields.io/badge/Cloud-AWS_EKS_RDS_SQS_DynamoDB-232F3E?logo=amazon-aws&logoColor=white)
+![AWS](https://img.shields.io/badge/Cloud-AWS_Free__Tier_&_Enterprise-232F3E?logo=amazon-aws&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/CI%2FCD-DevSecOps_Pipelines-2088FF?logo=github-actions&logoColor=white)
 ![GitOps](https://img.shields.io/badge/CD-ArgoCD_GitOps-EF6B48?logo=argo&logoColor=white)
 ![Security](https://img.shields.io/badge/Security-Trivy_Gosec_Bandit-00C7B7?logo=security&logoColor=white)
 
-Projeto oficial do **Tech Challenge - Fase 3 (Pós-Tech FIAP)** focado na transformação da arquitetura de microsserviços do **ToggleMaster** através de **Infraestrutura como Código (Terraform modular)**, **Pipelines de Integração Contínua com DevSecOps (GitHub Actions)** e **Entrega Contínua orientada a GitOps (ArgoCD)**.
+Projeto oficial do **Tech Challenge - Fase 3 (Pós-Tech FIAP)** focado na evolução e automação dos microsserviços do **ToggleMaster** através de:
+- **Infraestrutura como Código (Terraform modular)** com suporte nativo a **AWS Free Tier ($0/mês)** e arquitetura corporativa completa.
+- **Pipelines de Integração Contínua com DevSecOps (GitHub Actions)** cobrindo Linter, SCA (Trivy), SAST (Gosec / Bandit) e Container Security Scan.
+- **Entrega Contínua orientada a GitOps (ArgoCD)** com versionamento automático de tags de imagens nos manifestos.
+- **Destruição Automatizada (Teardown Script)** para limpeza total dos recursos em nuvem.
 
 ---
 
-## 🏗️ 1. Arquitetura da Solução
+## 👥 Integrantes do Grupo
+- **Erisvam Herdley Da Silva Santos**
+- **Felipe Sousa Da Silva**
+- **Rafael Andrade Ferretto**
+
+---
+
+## 🏗️ 1. Arquitetura da Solução e Fluxo CI/CD + GitOps
 
 ```mermaid
 flowchart TD
@@ -21,29 +32,26 @@ flowchart TD
     subgraph CI["GitHub Actions (CI / DevSecOps)"]
         Build["1. Build & Unit Test"]
         Lint["2. Linter (golangci-lint / flake8)"]
-        SCA["3. SCA: Trivy FS (Dependências)"]
-        SAST["4. SAST: Gosec / Bandit (Código)"]
+        SCA["3. SCA: Trivy FS (Scan de Dependências)"]
+        SAST["3. SAST: Gosec / Bandit (Análise Estática)"]
         Gate{"Vulnerabilidade Crítica?"}
-        Docker["5. Docker Build & Trivy Image Scan"]
-        ECR["6. Push AWS ECR"]
-        GitOpsUp["7. Auto-Update Tag no GitOps"]
+        Docker["4. Docker Build & Trivy Image Scan"]
+        ECR["4. Push AWS ECR"]
+        GitOpsUp["5. GitOps Auto-Update (commit deployment.yaml)"]
     end
 
-    subgraph GitOpsRepo["GitOps Repository / Diretório gitops/"]
-        Manifests["Manifestos K8s (deployment.yaml atualizado)"]
+    subgraph GitOpsRepo["Repositório GitOps (gitops/)"]
+        Manifests["Manifestos K8s Atualizados (Image Tag)"]
     end
 
-    subgraph Cluster["Amazon EKS (Kubernetes v1.30)"]
+    subgraph Cluster["Kubernetes / AWS (EKS / EC2)"]
         ArgoCD["ArgoCD (Auto-Sync & Self-Healing)"]
-        Ingress["NGINX Ingress Controller"]
-        Pods["Microsserviços Pods (Auth, Flag, Targeting, Eval, Analytics)"]
-        HPA["HPA & KEDA Scalers"]
+        Pods["Microsserviços (Auth, Flag, Targeting, Evaluation, Analytics)"]
     end
 
-    subgraph AWS["AWS Cloud Infrastructure (Terraform)"]
-        VPC["VPC com Subnets Públicas, Privadas e DB"]
-        RDS["3x RDS PostgreSQL (Auth, Flag, Targeting)"]
-        Redis["ElastiCache Redis (Cache Avaliação)"]
+    subgraph AWS["Infraestrutura AWS (Terraform)"]
+        VPC["VPC (Subnets Públicas, Privadas e DB)"]
+        RDS["RDS PostgreSQL"]
         SQS["SQS ToggleMasterEvents + DLQ"]
         DDB["DynamoDB ToggleMasterAnalytics"]
         ECR_Repos["5x Repositórios ECR Privados"]
@@ -51,13 +59,12 @@ flowchart TD
 
     GitCommit --> CI
     Build --> Lint --> SCA --> SAST --> Gate
-    Gate -- "Sim (Bloqueio)" --> Fail["Pipeline Falha e Notifica"]
+    Gate -- "Sim (Bloqueio DevSecOps)" --> Fail["Pipeline Bloqueado (Exit 1)"]
     Gate -- "Não (Aprovado)" --> Docker --> ECR --> GitOpsUp
     GitOpsUp --> Manifests
     Manifests --> ArgoCD
     ArgoCD --> Pods
     Pods --> RDS
-    Pods --> Redis
     Pods --> SQS
     Pods --> DDB
 ```
@@ -70,123 +77,135 @@ flowchart TD
 .
 ├── .github/
 │   └── workflows/
-│       ├── ci-auth-service.yml          # Pipeline DevSecOps & GitOps Auth (Go)
-│       ├── ci-flag-service.yml          # Pipeline DevSecOps & GitOps Flag (Python)
-│       ├── ci-targeting-service.yml     # Pipeline DevSecOps & GitOps Targeting (Python)
-│       ├── ci-evaluation-service.yml    # Pipeline DevSecOps & GitOps Evaluation (Go)
-│       ├── ci-analytics-service.yml     # Pipeline DevSecOps & GitOps Analytics (Python)
+│       ├── ci-auth-service.yml          # Pipeline DevSecOps Auth (Go)
+│       ├── ci-flag-service.yml          # Pipeline DevSecOps Flag (Python)
+│       ├── ci-targeting-service.yml     # Pipeline DevSecOps Targeting (Python)
+│       ├── ci-evaluation-service.yml    # Pipeline DevSecOps Evaluation (Go)
+│       ├── ci-analytics-service.yml     # Pipeline DevSecOps Analytics (Python)
 │       └── iac-terraform.yml            # Pipeline de validação e scan do Terraform
-├── services/                            # Código fonte dos 5 microsserviços
+├── services/                            # Código fonte e testes dos 5 microsserviços
 │   ├── auth-service/                    # Go 1.22 + Testes Unitários + Dockerfile
 │   ├── flag-service/                    # Python 3.12 + Testes Unitários + Dockerfile
 │   ├── targeting-service/               # Python 3.12 + Testes Unitários + Dockerfile
 │   ├── evaluation-service/              # Go 1.22 + Testes Unitários + Dockerfile
 │   └── analytics-service/               # Python 3.12 + Testes Unitários + Dockerfile
-├── terraform/                           # Infraestrutura como Código Modular
+├── terraform/                           # Infraestrutura Principal (Padrão 100% Free Tier)
 │   ├── backend.tf                       # S3 Remote Backend com use_lockfile
-│   ├── main.tf                          # Orquestração de todos os módulos
-│   ├── providers.tf                     # Provedores AWS, Kubernetes, Helm, TLS
-│   ├── variables.tf                     # Variáveis parametrizáveis (Academy vs Pessoal)
-│   ├── outputs.tf                       # Endpoints consolidados para EKS, RDS, Redis, SQS
-│   ├── terraform.tfvars.example
+│   ├── main.tf                          # Orquestração modular
+│   ├── variables.tf                     # Parametrização (enable_free_tier = true)
+│   ├── outputs.tf                       # Endpoints e identificadores gerados
 │   └── modules/
-│       ├── networking/                  # VPC, Subnets Públicas/Privadas/DB, IGW, NAT GW
-│       ├── eks/                         # Cluster EKS v1.30, Node Group, OIDC/IRSA
-│       ├── databases/                   # 3 RDS Postgres, ElastiCache Redis, DynamoDB
-│       ├── messaging/                   # SQS ToggleMasterEvents e DLQ
-│       ├── ecr/                         # 5 Repositórios ECR com lifecycle policies
-│       └── argocd/                      # Helm Release ArgoCD, Ingress e Metrics Server
+│       ├── compute/                     # Instância EC2 t3.micro (Free Tier)
+│       ├── networking/                  # VPC sem custos de NAT Gateway
+│       ├── databases/                   # RDS db.t3.micro + DynamoDB On-Demand
+│       ├── messaging/                   # Fila SQS ToggleMasterEvents e DLQ
+│       ├── ecr/                         # 5 Repositórios ECR com ciclo de retenção
+│       └── eks/                         # Módulo EKS para arquitetura completa
+├── arquitetura-completa/                # Infraestrutura Enterprise Multi-RDS + EKS + Redis
 ├── gitops/                              # Manifestos Kubernetes para ArgoCD
-│   ├── argocd-apps/                     # App-of-Apps (root-application.yaml)
-│   └── apps/
-│       ├── base/                        # Namespace, ConfigMap, Secrets, Ingress, HPA, KEDA
-│       ├── auth-service/                # deployment.yaml e service.yaml
-│       ├── flag-service/                # deployment.yaml e service.yaml
-│       ├── targeting-service/           # deployment.yaml e service.yaml
-│       ├── evaluation-service/          # deployment.yaml e service.yaml
-│       └── analytics-service/           # deployment.yaml e service.yaml
+│   ├── argocd-apps/                     # Application Root (App-of-Apps)
+│   └── apps/                            # Manifestos de cada microsserviço
 ├── scripts/                             # Scripts utilitários de automação
-│   ├── setup-remote-backend.sh          # Criação do S3 Bucket para state com encriptação
-│   ├── test-devsecops-local.sh          # Testes unitários e linter locais
-│   └── simulate-security-fail.sh        # Simulação de falha proposital para o vídeo
+│   ├── setup-remote-backend.sh          # Criação interativa e segura do S3 Backend
+│   ├── teardown-aws.sh                  # Destruição completa dos recursos AWS
+│   ├── test-devsecops-local.sh          # Execução de testes unitários locais
+│   └── simulate-security-fail.sh        # Simulação de bloqueio DevSecOps para gravação
 ├── docs/                                # Documentação técnica detalhada
-│   ├── arquitetura.md                   # Documentação completa de rede e infra AWS
-│   ├── devsecops.md                     # Guia de segurança, SAST, SCA e Container Scan
-│   ├── gitops.md                        # Guia de operação do ArgoCD e GitOps
-│   └── relatorio_entrega.md             # Modelo oficial de entrega e estimativa de custos
+│   ├── arquitetura.md                   # Documentação de arquitetura e infraestrutura
+│   ├── devsecops.md                     # Shift-Left Security: SCA, SAST e Container Scan
+│   ├── gitops.md                        # Operação contínua via GitOps e ArgoCD
+│   └── relatorio_entrega.md             # Relatório formal com identificação do grupo
 └── README.md
 ```
 
 ---
 
-## 🚀 3. Como Executar o Projeto
+## 🚀 3. Guia de Execução Passo a Passo
 
 ### Pré-requisitos
 - **AWS CLI v2** configurado (`aws configure`)
 - **Terraform** >= v1.5.0
-- **kubectl** >= v1.28
-- **Helm** v3
+- **Git**
+
+---
 
 ### Passo 1: Configurar o S3 Remote State Backend
+O script seleciona seu perfil AWS interativamente e cria o bucket exclusivo com criptografia, versionamento e trava de concorrência:
 ```bash
-chmod +x scripts/*.sh
-bash scripts/setup-remote-backend.sh togglemaster-terraform-state-fiap us-east-1
+./scripts/setup-remote-backend.sh
 ```
+> O script exibe ao final um relatório com o status de criação e configurações do bucket S3.
+
+---
 
 ### Passo 2: Provisionar a Infraestrutura AWS com Terraform
+Por padrão, o projeto está configurado no modo **Free Tier ($0/mês)**:
 ```bash
+export AWS_PROFILE=aws-personal
 cd terraform
-cp terraform.tfvars.example terraform.tfvars
-
-# Se estiver usando AWS Academy, configure use_aws_academy = true no terraform.tfvars
-# Para Conta Pessoal, mantenha use_aws_academy = false
-
 terraform init
 terraform plan
 terraform apply -auto-approve
-```
-
-### Passo 3: Conectar o kubectl ao Cluster EKS
-```bash
-aws eks update-kubeconfig --region us-east-1 --name togglemaster-cluster
-kubectl get nodes
-```
-
-### Passo 4: Conectar e Configurar o ArgoCD
-```bash
-# Obtenha a senha do ArgoCD admin:
-kubectl get secret argocd-initial-admin-secret -n argocd -o jsonpath="{.data.password}" | base64 -d; echo ""
-
-# Aplique o Application Root do GitOps:
-kubectl apply -f ../gitops/argocd-apps/root-application.yaml
+cd ..
 ```
 
 ---
 
-## 🔒 4. DevSecOps: Teste de Falha e Correção (Para o Vídeo)
-
-Conforme o requisito do desafio, para demonstrar o pipeline de segurança bloqueando vulnerabilidades:
-
-1. **Injetar vulnerabilidade**:
-   ```bash
-   bash scripts/simulate-security-fail.sh fail
-   git commit -am "test: inject vulnerable dependency for devsecops demo"
-   git push origin main
-   ```
-   > ❌ O pipeline falhará no estágio **3. Security Scan (SCA & SAST)** acusando CVE crítica no Trivy.
-
-2. **Aplicar a correção**:
-   ```bash
-   bash scripts/simulate-security-fail.sh fix
-   git commit -am "fix: remove vulnerable dependency"
-   git push origin main
-   ```
-   > ✅ O pipeline passará por todos os 5 estágios e atualizará a tag no GitOps automaticamente.
+### Passo 3: Executar Testes Unitários e Sintaxe Localmente
+Para rodar toda a suíte de testes unitários (Go e Python) e linting localmente:
+```bash
+./scripts/test-devsecops-local.sh
+```
 
 ---
 
-## 📚 5. Documentações Adicionais
-- 📘 [Arquitetura de Nuvem e Rede AWS](docs/arquitetura.md)
+## 🔒 4. Demonstração de DevSecOps (Para Gravação de Vídeo)
+
+O projeto possui um script automatizado para demonstrar o pipeline bloqueando vulnerabilidades críticas no estágio **3. Security Scan (SCA & SAST)** e posteriormente liberando após a correção:
+
+### 1. Simular Falha de Segurança (Bloqueio pelo Trivy)
+```bash
+# Injeta dependência com CVE crítica no flag-service
+./scripts/simulate-security-fail.sh fail
+git commit -am "test: inject vulnerable dependency for devsecops demo"
+git push origin main
+```
+> ❌ **Comportamento esperado**: O GitHub Actions executa os testes unitários, o linter e **falha no estágio 3 (Security Scan)** devido às vulnerabilidades críticas apontadas pelo Trivy no arquivo `requirements.txt`. O build e push da imagem são bloqueados.
+
+### 2. Aplicar Correção (Pipeline Passando 100%)
+```bash
+# Remove a dependência vulnerável
+./scripts/simulate-security-fail.sh fix
+git commit -am "fix: remove vulnerable dependency"
+git push origin main
+```
+> ✅ **Comportamento esperado**: O pipeline passa por todos os 5 estágios:
+> 1. `Build & Unit Test`
+> 2. `Linter & Static Analysis`
+> 3. `Security Scan (SCA & SAST)`
+> 4. `Docker Build, Scan & Push (ECR)`
+> 5. `GitOps Auto-Update (Atualiza tag da imagem no repositório)`
+
+---
+
+## 🧹 5. Destruição Completa da Infraestrutura (Teardown)
+
+Para evitar qualquer cobrança desnecessária na AWS após os testes ou gravação, execute o script de teardown:
+
+```bash
+./scripts/teardown-aws.sh
+```
+
+O script:
+1. Permite selecionar interativamente o perfil AWS.
+2. Esvazia e limpa todas as imagens dos 5 repositórios ECR.
+3. Executa o `terraform destroy -auto-approve` de forma limpa e idempotente.
+4. Permite opcionalmente remover o bucket de Remote State com a flag `--delete-state-bucket`.
+
+---
+
+## 📚 6. Documentações Adicionais
+- 📘 [Documentação de Arquitetura de Nuvem e Rede AWS](docs/arquitetura.md)
 - 🛡️ [Guia de DevSecOps e Segurança Shift-Left](docs/devsecops.md)
-- 🔄 [Guia de GitOps e ArgoCD](docs/gitops.md)
-- 📋 [Relatório de Entrega & Estimativa de Custos](docs/relatorio_entrega.md)
+- 🔄 [Guia de GitOps e Operações ArgoCD](docs/gitops.md)
+- 📋 [Relatório Oficial de Entrega & Custos](docs/relatorio_entrega.md)
