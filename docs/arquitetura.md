@@ -1,63 +1,57 @@
 # Arquitetura de Infraestrutura em Nuvem (AWS) - ToggleMaster Fase 3
 
-Este documento detalha a arquitetura em nuvem provisionada de forma 100% automatizada e declarativa através do **Terraform**, atendendo aos requisitos do Tech Challenge da Fase 3 (FIAP Pós-Tech) com foco em viabilidade de custos (**Ambiente Principal 100% Free Tier**) e flexibilidade corporativa (**Arquitetura Completa Multi-Recurso**).
+Este documento detalha a arquitetura corporativa em nuvem provisionada de forma 100% automatizada, declarativa e imutável através do **Terraform**, atendendo integralmente a todos os requisitos do Tech Challenge da Fase 3 (FIAP Pós-Tech) com foco em alta disponibilidade (**Amazon EKS v1.30**, **3x RDS PostgreSQL**, **ElastiCache Redis**, **VPC com NAT Gateway** e **ArgoCD GitOps**).
+
+> 💡 **Nota sobre Custos**: A versão 100% Free Tier (custo zero) está preservada no diretório [`arquitetura-free-tier/`](../arquitetura-free-tier/) caso deseje validar em contas pessoais sem consumo de créditos.
 
 ---
 
-## 1. Ambiente Principal: Arquitetura 100% Free Tier (Custo Zero)
-
-Para garantir que o projeto possa ser executado e validado em contas da AWS sem gerar cobranças financeiras, o ambiente principal foi estruturado para utilizar exclusivamente recursos do **AWS Free Tier (nível gratuito)**.
+## 1. Diagrama Geral da Arquitetura e Pipeline DevSecOps
 
 ![Diagrama da Arquitetura e Pipeline DevSecOps](images/arquitetura_togglemaster.png)
 
 ```
 +----------------------------------------------------------------------------------------------------+
-| AWS Cloud (us-east-1) - VPC: 10.0.0.0/16 [Modo Free Tier: Custo Zero]                              |
+| AWS Cloud (us-east-1) - VPC: 10.0.0.0/16                                                           |
 |                                                                                                    |
-|  [ Internet Gateway (IGW) ]                                                                        |
-|         |                                                                                          |
-|  [ Public Subnet: 10.0.1.0/24 ]                                                                    |
-|         |                                                                                          |
-|   +-----v---------------------------------------------------------------------------------------+  |
-|   | Instância EC2 Free Tier: t3.micro (750 horas/mês gratuitas)                                 |  |
-|   | Sistema Operacional: Ubuntu 24.04 LTS                                                       |  |
-|   |                                                                                             |  |
-|   |  Ambiente de Execução (Docker Compose / K3s):                                               |  |
-|   |    - [ auth-service ]       (Go)     : Porta 8001                                           |  |
-|   |    - [ flag-service ]       (Python) : Porta 8002                                           |  |
-|   |    - [ targeting-service ]  (Python) : Porta 8003                                           |  |
-|   |    - [ evaluation-service ] (Go)     : Porta 8004                                           |  |
-|   |    - [ analytics-service ]  (Python) : Porta 8005                                           |  |
-|   |    - [ Redis Container ]    (Cache local na EC2 para avaliação)                             |  |
-|   +---------------------------------------------------------------------------------------------+  |
-|         |                                                                                          |
-|  [ Database Subnets: 10.0.20.0/24, 10.0.21.0/24 ]                                                  |
-|         |                                                                                          |
-|   +-----v---------------------------------------------------------------------------------------+  |
-|   | 1x Instância Amazon RDS PostgreSQL: db.t3.micro (750 horas/mês + 20 GB gp3 gratuitos)       |  |
-|   | Contém os bancos relacionais: 'authdb', 'flagdb' e 'targetingdb'                            |  |
-|   +---------------------------------------------------------------------------------------------+  |
+|  [ Internet Gateway ] <---> [ Public Subnets: 10.0.1.0/24, 10.0.2.0/24 ]                           |
+|                                     |                                                              |
+|                                [ NAT Gateway ]                                                     |
+|                                     |                                                              |
+|  +----------------------------------v-----------------------------------------------------------+  |
+|  | Private Subnets (EKS Managed Nodes): 10.0.10.0/24, 10.0.11.0/24                              |  |
+|  |                                                                                              |  |
+|  |   +---------------------------------------------------------------------------------------+  |  |
+|  |   | Amazon EKS Cluster: togglemaster-cluster (Kubernetes v1.30)                           |  |  |
+|  |   |                                                                                       |  |  |
+|  |   |  - ArgoCD Controller (GitOps com UI Integrada)                                        |  |  |
+|  |   |  - Ingress NGINX Controller                                                           |  |  |
+|  |   |  - KEDA Operator & Metrics Server (Autoscaling)                                       |  |  |
+|  |   |                                                                                       |  |  |
+|  |   |  Pods dos 5 Microsserviços:                                                           |  |  |
+|  |   |    [ auth-service ]       (Go)     : Porta 8001                                      |  |  |
+|  |   |    [ flag-service ]       (Python) : Porta 8002                                      |  |  |
+|  |   |    [ targeting-service ]  (Python) : Porta 8003                                      |  |  |
+|  |   |    [ evaluation-service ] (Go)     : Porta 8004                                      |  |  |
+|  |   |    [ analytics-service ]  (Python) : Porta 8005                                      |  |  |
+|  |   +---------------------------------------------------------------------------------------+  |  |
+|  +----------------------------------------------------------------------------------------------+  |
+|                                     |                                                              |
+|  +----------------------------------v-----------------------------------------------------------+  |
+|  | Isolated Database Subnets: 10.0.20.0/24, 10.0.21.0/24                                        |  |
+|  |                                                                                              |  |
+|  |   [ RDS Auth ]          [ RDS Flag ]          [ RDS Targeting ]       [ ElastiCache Redis ]  |  |
+|  |   (PostgreSQL 15)       (PostgreSQL 15)       (PostgreSQL 15)         (Cluster Redis 7)      |  |
+|  |   Porta: 5432           Porta: 5432           Porta: 5432             Porta: 6379            |  |
+|  +----------------------------------------------------------------------------------------------+  |
 |                                                                                                    |
-|  Serviços AWS Gerenciados no Nível Gratuito:                                                       |
-|    - Amazon DynamoDB: Tabela 'ToggleMasterAnalytics' (25 GB gratuitos forever)                     |
-|    - Amazon SQS: Fila 'ToggleMasterEvents' (1 milhão de requisições gratuitas forever)             |
-|    - Amazon ECR: 5 Repositórios privados (500 MB gratuitos/mês)                                    |
-|    - Amazon S3: Remote State Bucket com use_lockfile = true (5 GB gratuitos)                       |
+|  Managed AWS Services:                                                                             |
+|    - Amazon DynamoDB: Tabela 'ToggleMasterAnalytics' (PAY_PER_REQUEST)                             |
+|    - Amazon SQS: Fila 'ToggleMasterEvents' + 'ToggleMasterEvents-dlq'                              |
+|    - Amazon ECR: 5 Repositórios privados com Image Scanning on Push                                |
+|    - Amazon S3: Remote State Bucket com 'use_lockfile = true'                                      |
 +----------------------------------------------------------------------------------------------------+
 ```
-
-### Otimizações do Modo Free Tier:
-1. **Sem NAT Gateway**: Elimina o custo fixo de ~$34.50/mês do NAT Gateway, utilizando rotas diretas via Internet Gateway com Security Groups estritamente configurados.
-2. **1 Instância RDS PostgreSQL**: A cota do Free Tier permite 750 horas de RDS Single-AZ `db.t3.micro`. Uma única instância atende a persistência dos microsserviços sem ultrapassar a franquia.
-3. **Redis Local em Contêiner**: Evita o custo de cluster dedicado do ElastiCache, mantendo a latência mínima em memória na própria instância EC2.
-4. **Instância EC2 `t3.micro`**: 750 horas mensais cobertas pelo Free Tier, provisionada automaticamente com Docker e Docker Compose via User Data.
-
----
-
-## 2. Arquitetura Completa Enterprise (EKS Multi-Recurso)
-
-A arquitetura corporativa completa desenvolvida para a entrega acadêmica original está preservada e disponível no diretório:
-📁 **[`arquitetura-completa/`](../arquitetura-completa/)**
 
 Ela contempla:
 - **Cluster Amazon EKS v1.30** com Managed Node Groups (`t3.small`).
