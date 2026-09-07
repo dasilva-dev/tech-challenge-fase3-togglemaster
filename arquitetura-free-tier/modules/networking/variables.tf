@@ -34,6 +34,12 @@ variable "database_subnet_cidrs" {
   default     = ["10.0.20.0/24", "10.0.21.0/24"]
 }
 
+variable "enable_nat_gateway" {
+  type        = bool
+  description = "Habilitar NAT Gateway (quando false, economiza custos mantendo modo Free Tier)"
+  default     = false
+}
+
 variable "tags" {
   type        = map(string)
   description = "Tags padronizadas para os recursos"

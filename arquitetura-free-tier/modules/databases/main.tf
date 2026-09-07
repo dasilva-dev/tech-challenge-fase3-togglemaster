@@ -32,8 +32,9 @@ resource "aws_db_instance" "auth" {
   )
 }
 
-# 2. RDS PostgreSQL - Flag Service
+# 2. RDS PostgreSQL - Flag Service (Opcional - omitido no modo Free Tier para manter custo zero)
 resource "aws_db_instance" "flag" {
+  count                  = var.enable_free_tier ? 0 : 1
   identifier             = "togglemaster-db-flag"
   engine                 = "postgres"
   instance_class         = "db.t3.micro"
@@ -57,8 +58,9 @@ resource "aws_db_instance" "flag" {
   )
 }
 
-# 3. RDS PostgreSQL - Targeting Service
+# 3. RDS PostgreSQL - Targeting Service (Opcional - omitido no modo Free Tier)
 resource "aws_db_instance" "targeting" {
+  count                  = var.enable_free_tier ? 0 : 1
   identifier             = "togglemaster-db-targeting"
   engine                 = "postgres"
   instance_class         = "db.t3.micro"
@@ -82,23 +84,25 @@ resource "aws_db_instance" "targeting" {
   )
 }
 
-# Subnet Group para o ElastiCache Redis
+# Subnet Group para o ElastiCache Redis (Opcional - omitido no modo Free Tier)
 resource "aws_elasticache_subnet_group" "redis" {
+  count      = var.enable_free_tier ? 0 : 1
   name       = "togglemaster-redis-subnet-group"
   subnet_ids = var.database_subnet_ids
 
   tags = var.tags
 }
 
-# 4. Cluster ElastiCache Redis
+# 4. Cluster ElastiCache Redis (Opcional - omitido no modo Free Tier, onde o Redis roda localmente na EC2)
 resource "aws_elasticache_cluster" "redis" {
+  count                = var.enable_free_tier ? 0 : 1
   cluster_id           = "togglemaster-cache"
   engine               = "redis"
   node_type            = "cache.t4g.micro"
   num_cache_nodes      = 1
   parameter_group_name = "default.redis7"
   port                 = 6379
-  subnet_group_name    = aws_elasticache_subnet_group.redis.name
+  subnet_group_name    = aws_elasticache_subnet_group.redis[0].name
   security_group_ids   = [var.database_security_group_id]
 
   tags = merge(

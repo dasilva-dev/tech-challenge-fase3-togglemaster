@@ -35,19 +35,20 @@ provider "aws" {
 }
 
 data "aws_eks_cluster_auth" "cluster" {
-  name = module.eks.cluster_name
+  count = var.enable_free_tier ? 0 : 1
+  name  = try(module.eks[0].cluster_name, "")
 }
 
 provider "kubernetes" {
-  host                   = module.eks.cluster_endpoint
-  cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-  token                  = data.aws_eks_cluster_auth.cluster.token
+  host                   = try(module.eks[0].cluster_endpoint, "https://localhost")
+  cluster_ca_certificate = try(base64decode(module.eks[0].cluster_certificate_authority_data), "")
+  token                  = try(data.aws_eks_cluster_auth.cluster[0].token, "")
 }
 
 provider "helm" {
   kubernetes {
-    host                   = module.eks.cluster_endpoint
-    cluster_ca_certificate = base64decode(module.eks.cluster_certificate_authority_data)
-    token                  = data.aws_eks_cluster_auth.cluster.token
+    host                   = try(module.eks[0].cluster_endpoint, "https://localhost")
+    cluster_ca_certificate = try(base64decode(module.eks[0].cluster_certificate_authority_data), "")
+    token                  = try(data.aws_eks_cluster_auth.cluster[0].token, "")
   }
 }

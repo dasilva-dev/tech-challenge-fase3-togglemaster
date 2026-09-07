@@ -27,3 +27,8 @@ output "database_security_group_id" {
   description = "ID do Security Group dos Bancos de Dados"
   value       = aws_security_group.database.id
 }
+
+output "ec2_security_group_id" {
+  description = "ID do Security Group da Instancia EC2 Free Tier"
+  value       = aws_security_group.ec2.id
+}

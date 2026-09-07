@@ -42,8 +42,9 @@ resource "aws_subnet" "public" {
   )
 }
 
-# Elastic IP e NAT Gateway para permitir que nós privados baixem imagens e pacotes
+# Elastic IP e NAT Gateway para permitir que nós privados baixem imagens e pacotes (Opcional - desligado no Free Tier)
 resource "aws_eip" "nat" {
+  count  = var.enable_nat_gateway ? 1 : 0
   domain = "vpc"
 
   tags = merge(
@@ -55,7 +56,8 @@ resource "aws_eip" "nat" {
 }
 
 resource "aws_nat_gateway" "nat" {
-  allocation_id = aws_eip.nat.id
+  count         = var.enable_nat_gateway ? 1 : 0
+  allocation_id = aws_eip.nat[0].id
   subnet_id     = aws_subnet.public[0].id
 
   tags = merge(
@@ -120,9 +122,12 @@ resource "aws_route_table" "public" {
 resource "aws_route_table" "private" {
   vpc_id = aws_vpc.main.id
 
-  route {
-    cidr_block     = "0.0.0.0/0"
-    nat_gateway_id = aws_nat_gateway.nat.id
+  dynamic "route" {
+    for_each = var.enable_nat_gateway ? [1] : []
+    content {
+      cidr_block     = "0.0.0.0/0"
+      nat_gateway_id = aws_nat_gateway.nat[0].id
+    }
   }
 
   tags = merge(
@@ -219,6 +224,51 @@ resource "aws_security_group" "database" {
     var.tags,
     {
       Name = "${var.cluster_name}-database-sg"
+    }
+  )
+}
+
+# Security Group para a Instância EC2 (Free Tier)
+resource "aws_security_group" "ec2" {
+  name        = "${var.cluster_name}-ec2-sg"
+  description = "Acesso HTTP e SSH para a instancia EC2 Free Tier"
+  vpc_id      = aws_vpc.main.id
+
+  ingress {
+    description = "SSH"
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "HTTP Publico"
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    description = "ToggleMaster Services Ports (8001-8005, 5000)"
+    from_port   = 5000
+    to_port     = 8005
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = merge(
+    var.tags,
+    {
+      Name = "${var.cluster_name}-ec2-sg"
     }
   )
 }

@@ -21,6 +21,12 @@ variable "db_password" {
   default     = "ToggleMaster123"
 }
 
+variable "enable_free_tier" {
+  type        = bool
+  description = "Quando true, provisiona apenas 1 instancia RDS e omite ElastiCache para garantir 100% elegibilidade ao Free Tier (custo zero)"
+  default     = true
+}
+
 variable "tags" {
   type        = map(string)
   description = "Tags padronizadas"
