@@ -22,6 +22,9 @@
 - **Documentação de DevSecOps**: [docs/devsecops.md](docs/devsecops.md)
 - **Documentação de GitOps**: [docs/gitops.md](docs/gitops.md)
 
+### Diagrama da Arquitetura e Pipeline DevSecOps
+![Desenho da Arquitetura ToggleMaster](images/arquitetura_togglemaster.png)
+
 ---
 
 ## 3. Resumo dos Desafios Encontrados e Decisões Tomadas

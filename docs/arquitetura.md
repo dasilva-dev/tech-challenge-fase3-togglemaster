@@ -8,6 +8,8 @@ Este documento detalha a arquitetura em nuvem provisionada de forma 100% automat
 
 Para garantir que o projeto possa ser executado e validado em contas da AWS sem gerar cobranças financeiras, o ambiente principal foi estruturado para utilizar exclusivamente recursos do **AWS Free Tier (nível gratuito)**.
 
+![Diagrama da Arquitetura e Pipeline DevSecOps](images/arquitetura_togglemaster.png)
+
 ```
 +----------------------------------------------------------------------------------------------------+
 | AWS Cloud (us-east-1) - VPC: 10.0.0.0/16 [Modo Free Tier: Custo Zero]                              |
