@@ -77,6 +77,18 @@ resource "aws_iam_role_policy_attachment" "node_registry_policy" {
   role       = aws_iam_role.nodes[0].name
 }
 
+resource "aws_iam_role_policy_attachment" "node_sqs_policy" {
+  count      = var.use_aws_academy ? 0 : 1
+  policy_arn = "arn:aws:iam::aws:policy/AmazonSQSFullAccess"
+  role       = aws_iam_role.nodes[0].name
+}
+
+resource "aws_iam_role_policy_attachment" "node_dynamodb_policy" {
+  count      = var.use_aws_academy ? 0 : 1
+  policy_arn = "arn:aws:iam::aws:policy/AmazonDynamoDBFullAccess"
+  role       = aws_iam_role.nodes[0].name
+}
+
 # Definição das ARNs utilizadas conforme o modo (Academy vs Pessoal)
 locals {
   cluster_role_arn = var.use_aws_academy ? data.aws_iam_role.lab_role[0].arn : aws_iam_role.cluster[0].arn
