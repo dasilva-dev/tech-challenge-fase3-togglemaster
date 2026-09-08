@@ -19,10 +19,10 @@ load_dotenv()
 
 # --- Configuração ---
 AWS_REGION = os.getenv("AWS_REGION", "us-east-1")
-SQS_QUEUE_URL = os.getenv("AWS_SQS_URL")
+SQS_QUEUE_URL = os.getenv("AWS_SQS_URL") or os.getenv("SQS_QUEUE_URL")
 DYNAMODB_ENDPOINT_URL = os.getenv("AWS_DYNAMODB_ENDPOINT_URL")
 SQS_ENDPOINT_URL = os.getenv("AWS_SQS_ENDPOINT_URL")
-DYNAMODB_TABLE_NAME = os.getenv("AWS_DYNAMODB_TABLE")
+DYNAMODB_TABLE_NAME = os.getenv("AWS_DYNAMODB_TABLE") or os.getenv("DYNAMODB_TABLE")
 
 if not all([AWS_REGION, SQS_QUEUE_URL, DYNAMODB_TABLE_NAME]):
     log.critical("Erro: AWS_REGION, AWS_SQS_URL, e AWS_DYNAMODB_TABLE devem ser definidos.")

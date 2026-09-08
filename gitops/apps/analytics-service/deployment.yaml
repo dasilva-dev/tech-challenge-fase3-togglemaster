@@ -38,11 +38,21 @@ spec:
                 configMapKeyRef:
                   name: togglemaster-config
                   key: AWS_REGION
+            - name: AWS_SQS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: analytics-service-secret
+                  key: SQS_QUEUE_URL
             - name: SQS_QUEUE_URL
               valueFrom:
                 secretKeyRef:
                   name: analytics-service-secret
                   key: SQS_QUEUE_URL
+            - name: AWS_DYNAMODB_TABLE
+              valueFrom:
+                secretKeyRef:
+                  name: analytics-service-secret
+                  key: DYNAMODB_TABLE
             - name: DYNAMODB_TABLE
               valueFrom:
                 secretKeyRef:
