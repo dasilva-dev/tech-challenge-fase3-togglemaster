@@ -109,7 +109,7 @@ flowchart TD
 │   ├── setup-remote-backend.sh          # Criação interativa e segura do S3 Backend
 │   ├── teardown-aws.sh                  # Destruição completa dos recursos AWS
 │   ├── test-devsecops-local.sh          # Execução de testes unitários locais
-│   └── simulate-security-fail.sh        # Simulação de bloqueio DevSecOps para gravação
+│   └── simulate-security-fail.sh        # Simulação de bloqueio DevSecOps
 ├── docs/                                # Documentação técnica detalhada
 │   ├── arquitetura.md                   # Documentação de arquitetura e infraestrutura
 │   ├── devsecops.md                     # Shift-Left Security: SCA, SAST e Container Scan
@@ -159,7 +159,7 @@ Para rodar toda a suíte de testes unitários (Go e Python) e linting localmente
 
 ---
 
-## 🔒 4. Demonstração de DevSecOps (Para Gravação de Vídeo)
+## 🔒 4. Demonstração de DevSecOps
 
 O projeto possui um script automatizado para demonstrar o pipeline bloqueando vulnerabilidades críticas no estágio **3. Security Scan (SCA & SAST)** e posteriormente liberando após a correção:
 
@@ -190,7 +190,7 @@ git push origin main
 
 ## 🧹 5. Destruição Completa da Infraestrutura (Teardown)
 
-Para evitar qualquer cobrança desnecessária na AWS após os testes ou gravação, execute o script de teardown:
+Para evitar qualquer cobrança desnecessária na AWS após os testes, execute o script de teardown:
 
 ```bash
 ./scripts/teardown-aws.sh
