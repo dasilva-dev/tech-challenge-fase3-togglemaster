@@ -52,7 +52,7 @@ flowchart LR
 
 ---
 
-## 3. Demonstração Prática para o Vídeo (Falha e Correção)
+## 3. Demonstração Prática (Falha e Correção)
 
 Um dos critérios avaliativos centrais da Fase 3 é:
 > *"Faça uma alteração no código de um microsserviço (ex: insira um erro proposital ou uma dependência vulnerável) e mostre o pipeline falhando no passo de segurança. Depois corrija e mostre passando."*
