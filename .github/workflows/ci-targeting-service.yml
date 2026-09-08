@@ -118,7 +118,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       image_tag: ${{ steps.vars.outputs.image_tag }}
-      ecr_image: ${{ steps.vars.outputs.ecr_image }}
+      ecr_image: ${{ steps.docker-build.outputs.ecr_image }}
     steps:
       - name: Checkout Code
         uses: actions/checkout@v4
