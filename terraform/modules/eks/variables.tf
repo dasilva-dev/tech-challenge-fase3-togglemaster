@@ -45,7 +45,7 @@ variable "node_instance_types" {
 variable "desired_nodes" {
   type        = number
   description = "Quantidade desejada de nos no Node Group"
-  default     = 2
+  default     = 3
 }
 
 variable "min_nodes" {
@@ -57,7 +57,7 @@ variable "min_nodes" {
 variable "max_nodes" {
   type        = number
   description = "Quantidade maxima de nos"
-  default     = 3
+  default     = 4
 }
 
 variable "tags" {

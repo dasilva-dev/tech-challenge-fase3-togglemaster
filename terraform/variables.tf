@@ -44,7 +44,7 @@ variable "node_instance_types" {
 variable "desired_nodes" {
   type        = number
   description = "Numero desejado de Worker Nodes no EKS"
-  default     = 2
+  default     = 3
 }
 
 variable "install_argocd" {
