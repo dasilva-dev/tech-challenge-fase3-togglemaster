@@ -113,6 +113,10 @@ resource "aws_eks_cluster" "main" {
     aws_iam_role_policy_attachment.cluster_vpc_controller
   ]
 
+  lifecycle {
+    ignore_changes = [version]
+  }
+
   tags = merge(
     var.tags,
     {
