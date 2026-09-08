@@ -57,9 +57,9 @@ flowchart LR
 Um dos critérios avaliativos centrais da Fase 3 é:
 > *"Faça uma alteração no código de um microsserviço (ex: insira um erro proposital ou uma dependência vulnerável) e mostre o pipeline falhando no passo de segurança. Depois corrija e mostre passando."*
 
-Para facilitar essa gravação, criamos o script utilitário `scripts/simulate-security-fail.sh`.
+Para facilitar testes, criamos o script utilitário `scripts/simulate-security-fail.sh`.
 
-### Passo a Passo para a Gravação:
+### Passo a Passo para os testes:
 
 #### Etapa 1: Injetar a Dependência Vulnerável
 No terminal (WSL ou Bash), execute:
