@@ -1,16 +1,16 @@
-﻿# ToggleMaster - Fase 3: Automação e Segurança na Nuvem
+# ToggleMaster - Fase 3: Automação e Segurança na Nuvem
 
 ![Terraform](https://img.shields.io/badge/IaC-Terraform_Modular-623CE4?logo=terraform&logoColor=white)
-![AWS](https://img.shields.io/badge/Cloud-AWS_Free__Tier_&_Enterprise-232F3E?logo=amazon-aws&logoColor=white)
+![AWS](https://img.shields.io/badge/Cloud-AWS_EKS_&_Enterprise_Architecture-232F3E?logo=amazon-aws&logoColor=white)
 ![GitHub Actions](https://img.shields.io/badge/CI%2FCD-DevSecOps_Pipelines-2088FF?logo=github-actions&logoColor=white)
 ![GitOps](https://img.shields.io/badge/CD-ArgoCD_GitOps-EF6B48?logo=argo&logoColor=white)
 ![Security](https://img.shields.io/badge/Security-Trivy_Gosec_Bandit-00C7B7?logo=security&logoColor=white)
 
-Projeto oficial do **Tech Challenge - Fase 3 (Pós-Tech FIAP)** focado na evolução e automação dos microsserviços do **ToggleMaster** através de:
-- **Infraestrutura como Código (Terraform modular)** com suporte nativo a **AWS Free Tier ($0/mês)** e arquitetura corporativa completa.
-- **Pipelines de Integração Contínua com DevSecOps (GitHub Actions)** cobrindo Linter, SCA (Trivy), SAST (Gosec / Bandit) e Container Security Scan.
-- **Entrega Contínua orientada a GitOps (ArgoCD)** com versionamento automático de tags de imagens nos manifestos.
-- **Destruição Automatizada (Teardown Script)** para limpeza total dos recursos em nuvem.
+Projeto oficial do **Tech Challenge - Fase 3 (Pós-Tech FIAP)** focado na evolução, automação e segurança dos microsserviços do **ToggleMaster** através de:
+- **Infraestrutura como Código (Terraform modular)** provisionando a arquitetura completa em nuvem: **Amazon EKS (v1.31)**, 3x instâncias dedicadas de **Amazon RDS PostgreSQL**, cluster **Amazon ElastiCache Redis**, tabela **Amazon DynamoDB**, mensageria **Amazon SQS** e repositórios **Amazon ECR**.
+- **Pipelines de Integração Contínua com DevSecOps (GitHub Actions)** com regra de bloqueio obrigatório (Quality Gate) cobrindo Linter, SCA (Trivy), SAST (Gosec / Bandit) e Container Security Scan.
+- **Entrega Contínua orientada a GitOps (ArgoCD)** com reconciliação contínua e versionamento automático de tags de imagens nos manifestos K8s.
+- **Destruição Automatizada (Teardown Script)** para desprovisionamento limpo e governança de custos (FinOps).
 
 ---
 
@@ -44,14 +44,16 @@ flowchart TD
         Manifests["Manifestos K8s Atualizados (Image Tag)"]
     end
 
-    subgraph Cluster["Kubernetes / AWS (EKS / EC2)"]
+    subgraph Cluster["Cluster Kubernetes (Amazon EKS v1.31)"]
         ArgoCD["ArgoCD (Auto-Sync & Self-Healing)"]
         Pods["Microsserviços (Auth, Flag, Targeting, Evaluation, Analytics)"]
+        HPA_KEDA["Autoscaling: HPA (CPU/RAM) + KEDA (SQS)"]
     end
 
     subgraph AWS["Infraestrutura AWS (Terraform)"]
-        VPC["VPC (Subnets Públicas, Privadas e DB)"]
-        RDS["RDS PostgreSQL"]
+        VPC["VPC (Subnets Públicas, Privadas e Isoladas de DB)"]
+        RDS["3x RDS PostgreSQL (Auth, Flag, Targeting)"]
+        Redis["ElastiCache Redis (Cache de Avaliação)"]
         SQS["SQS ToggleMasterEvents + DLQ"]
         DDB["DynamoDB ToggleMasterAnalytics"]
         ECR_Repos["5x Repositórios ECR Privados"]
@@ -65,8 +67,10 @@ flowchart TD
     Manifests --> ArgoCD
     ArgoCD --> Pods
     Pods --> RDS
+    Pods --> Redis
     Pods --> SQS
     Pods --> DDB
+    HPA_KEDA -.-> Pods
 ```
 
 ---
@@ -89,32 +93,33 @@ flowchart TD
 │   ├── targeting-service/               # Python 3.12 + Testes Unitários + Dockerfile
 │   ├── evaluation-service/              # Go 1.22 + Testes Unitários + Dockerfile
 │   └── analytics-service/               # Python 3.12 + Testes Unitários + Dockerfile
-├── terraform/                           # Infraestrutura Principal (Padrão 100% Free Tier)
+├── terraform/                           # Infraestrutura Principal (EKS + Multi-RDS + Redis + SQS + DynamoDB + ECR)
 │   ├── backend.tf                       # S3 Remote Backend com use_lockfile
-│   ├── main.tf                          # Orquestração modular
-│   ├── variables.tf                     # Parametrização (enable_free_tier = true)
+│   ├── main.tf                          # Orquestração modular dos recursos
+│   ├── variables.tf                     # Parametrização do cluster, VPC e recursos
 │   ├── outputs.tf                       # Endpoints e identificadores gerados
 │   └── modules/
-│       ├── compute/                     # Instância EC2 t3.micro (Free Tier)
-│       ├── networking/                  # VPC sem custos de NAT Gateway
-│       ├── databases/                   # RDS db.t3.micro + DynamoDB On-Demand
+│       ├── networking/                  # VPC, Subnets Públicas/Privadas/DB, IGW e NAT Gateway
+│       ├── eks/                         # Cluster EKS v1.31 gerenciado e Node Groups
+│       ├── databases/                   # 3x RDS PostgreSQL, ElastiCache Redis e DynamoDB
 │       ├── messaging/                   # Fila SQS ToggleMasterEvents e DLQ
 │       ├── ecr/                         # 5 Repositórios ECR com ciclo de retenção
-│       └── eks/                         # Módulo EKS para arquitetura completa
-├── arquitetura-completa/                # Infraestrutura Enterprise Multi-RDS + EKS + Redis
+│       └── argocd/                      # ArgoCD Helm Release no cluster EKS
+├── arquitetura-free-tier/               # Versão alternativa monocontêiner para testes Free Tier
 ├── gitops/                              # Manifestos Kubernetes para ArgoCD
 │   ├── argocd-apps/                     # Application Root (App-of-Apps)
-│   └── apps/                            # Manifestos de cada microsserviço
+│   └── apps/                            # Manifestos de cada microsserviço (Deployment, Service, HPA, KEDA)
 ├── scripts/                             # Scripts utilitários de automação
 │   ├── setup-remote-backend.sh          # Criação interativa e segura do S3 Backend
 │   ├── teardown-aws.sh                  # Destruição completa dos recursos AWS
 │   ├── test-devsecops-local.sh          # Execução de testes unitários locais
-│   └── simulate-security-fail.sh        # Simulação de bloqueio DevSecOps
+│   └── simulate-security-fail.sh        # Simulação de bloqueio DevSecOps para gravação
 ├── docs/                                # Documentação técnica detalhada
 │   ├── arquitetura.md                   # Documentação de arquitetura e infraestrutura
 │   ├── devsecops.md                     # Shift-Left Security: SCA, SAST e Container Scan
 │   ├── gitops.md                        # Operação contínua via GitOps e ArgoCD
-│   └── relatorio_entrega.md             # Relatório formal com identificação do grupo
+│   ├── roteiro_gravacao.md              # Roteiro passo a passo para o vídeo de entrega
+│   └── relatorio_entrega.md             # Relatório formal com identificação do grupo e custos
 └── README.md
 ```
 
@@ -139,7 +144,7 @@ O script seleciona seu perfil AWS interativamente e cria o bucket exclusivo com 
 ---
 
 ### Passo 2: Provisionar a Infraestrutura AWS com Terraform
-Por padrão, o projeto está configurado no modo **Free Tier ($0/mês)**:
+A infraestrutura principal provisiona toda a arquitetura corporativa no Amazon EKS com bancos e mensageria dedicados:
 ```bash
 export AWS_PROFILE=aws-personal
 cd terraform
@@ -148,6 +153,7 @@ terraform plan
 terraform apply -auto-approve
 cd ..
 ```
+> 💡 *Nota*: Caso deseje testar a versão alternativa simplificada de baixo custo em uma única EC2, os códigos estão disponíveis e isolados no diretório `arquitetura-free-tier/`.
 
 ---
 
@@ -159,7 +165,7 @@ Para rodar toda a suíte de testes unitários (Go e Python) e linting localmente
 
 ---
 
-## 🔒 4. Demonstração de DevSecOps
+## 🔒 4. Demonstração de DevSecOps (Para Gravação de Vídeo)
 
 O projeto possui um script automatizado para demonstrar o pipeline bloqueando vulnerabilidades críticas no estágio **3. Security Scan (SCA & SAST)** e posteriormente liberando após a correção:
 
@@ -190,7 +196,7 @@ git push origin main
 
 ## 🧹 5. Destruição Completa da Infraestrutura (Teardown)
 
-Para evitar qualquer cobrança desnecessária na AWS após os testes, execute o script de teardown:
+Para evitar qualquer cobrança desnecessária na AWS após os testes ou gravação, execute o script de teardown:
 
 ```bash
 ./scripts/teardown-aws.sh
